@@ -1,0 +1,7 @@
+apiVersion: superset.apache.org/v1alpha1
+kind: Superset
+metadata:
+  name: superset
+spec:
+  image:
+    tag: dev

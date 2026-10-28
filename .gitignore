@@ -1,0 +1,12 @@
+.terraform/
+.helm/repository/
+*.tfstate
+*.tfstate.*
+*.tfplan
+*.tfvars
+*.auto.tfvars
+crash.log
+.env
+*.decrypted.yaml
+*.plaintext.yaml
+.vscode/

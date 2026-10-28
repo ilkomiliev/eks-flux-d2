@@ -1,0 +1,125 @@
+name: Publish signed D2 artifacts
+
+on:
+  push:
+    branches:
+      - main
+    tags:
+      - "v*.*.*"
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: imranismail/setup-kustomize@v2
+        with:
+          kustomize-version: "5.8.3"
+      - name: Build all Kustomize targets
+        run: |
+          set -euo pipefail
+          for path in \
+            fleet/flux-operator \
+            fleet/bootstrap \
+            fleet/clusters/first-tofu-eks \
+            infra \
+            apps/overlays/dev \
+            apps/overlays/prod; do
+            kustomize build "$path" >/dev/null
+          done
+
+  publish:
+    needs: validate
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::264930181295:role/first-tofu-eks-github-actions-ecr
+          aws-region: us-east-1
+      - uses: aws-actions/amazon-ecr-login@v2
+      - uses: docker/setup-buildx-action@v3
+      - name: Determine immutable image tags
+        id: image-tags
+        env:
+          REGISTRY: 264930181295.dkr.ecr.us-east-1.amazonaws.com
+        run: |
+          {
+            echo "tags<<EOF"
+            printf '%s\n' "${REGISTRY}/first-tofu-superset:dev" "${REGISTRY}/first-tofu-superset:${GITHUB_SHA}"
+            if [[ "$GITHUB_REF" == refs/tags/* ]]; then
+              printf '%s\n' "${REGISTRY}/first-tofu-superset:${GITHUB_REF_NAME}"
+            fi
+            echo EOF
+          } >> "$GITHUB_OUTPUT"
+      - uses: docker/build-push-action@v6
+        with:
+          context: apps
+          file: apps/Dockerfile
+          push: true
+          tags: ${{ steps.image-tags.outputs.tags }}
+      - name: Install Flux CLI
+        run: |
+          curl -fsSLo /tmp/flux.tar.gz https://github.com/fluxcd/flux2/releases/download/v2.9.6/flux_2.9.6_linux_amd64.tar.gz
+          tar -xzf /tmp/flux.tar.gz -C /tmp flux
+          sudo install /tmp/flux /usr/local/bin/flux
+      - name: Install Cosign
+        run: |
+          curl -fsSLo /tmp/cosign https://github.com/sigstore/cosign/releases/download/v2.4.3/cosign-linux-amd64
+          sudo install /tmp/cosign /usr/local/bin/cosign
+      - name: Sign Superset container image
+        env:
+          REGISTRY: 264930181295.dkr.ecr.us-east-1.amazonaws.com
+        run: |
+          set -euo pipefail
+          cosign sign --yes "${REGISTRY}/first-tofu-superset:${GITHUB_SHA}"
+          if [[ "$GITHUB_REF" == refs/tags/* ]]; then
+            cosign sign --yes "${REGISTRY}/first-tofu-superset:${GITHUB_REF_NAME}"
+          fi
+      - name: Pin image in published app artifacts
+        run: |
+          set -euo pipefail
+          if [[ "$GITHUB_REF" == refs/tags/* ]]; then
+            image_tag="$GITHUB_REF_NAME"
+          else
+            image_tag="$GITHUB_SHA"
+          fi
+          for overlay in apps/overlays/dev/image-tag-patch.yaml apps/overlays/prod/image-tag-patch.yaml; do
+            sed -i "s/tag: dev/tag: ${image_tag}/" "$overlay"
+          done
+      - name: Publish and sign fleet and infrastructure artifacts
+        env:
+          AWS_REGION: us-east-1
+          REGISTRY: 264930181295.dkr.ecr.us-east-1.amazonaws.com
+        run: |
+          set -euo pipefail
+          for layer in fleet infra; do
+            flux push artifact "oci://${REGISTRY}/first-tofu-flux-${layer}:main" \
+              --provider=aws \
+              --path="./${layer}" \
+              --source="${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}" \
+              --revision="${GITHUB_REF_NAME}@sha1:${GITHUB_SHA}"
+            cosign sign --yes "${REGISTRY}/first-tofu-flux-${layer}:main"
+          done
+      - name: Publish and sign application artifacts
+        env:
+          AWS_REGION: us-east-1
+          REGISTRY: 264930181295.dkr.ecr.us-east-1.amazonaws.com
+        run: |
+          set -euo pipefail
+          tags=(dev)
+          if [[ "$GITHUB_REF" == refs/tags/* ]]; then
+            tags+=("$GITHUB_REF_NAME")
+          fi
+          for tag in "${tags[@]}"; do
+            flux push artifact "oci://${REGISTRY}/first-tofu-flux-apps:${tag}" \
+              --provider=aws \
+              --path=./apps \
+              --source="${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}" \
+              --revision="${GITHUB_REF_NAME}@sha1:${GITHUB_SHA}"
+            cosign sign --yes "${REGISTRY}/first-tofu-flux-apps:${tag}"
+          done

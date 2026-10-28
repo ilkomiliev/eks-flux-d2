@@ -1,0 +1,24 @@
+apiVersion: acid.zalan.do/v1
+kind: postgresql
+metadata:
+  name: superset-db
+spec:
+  teamId: first-tofu
+  numberOfInstances: 1
+  users:
+    superset:
+      - createdb
+  databases:
+    superset: superset
+  postgresql:
+    version: "16"
+  volume:
+    size: 5Gi
+    storageClass: gp3
+  resources:
+    requests:
+      cpu: 250m
+      memory: 512Mi
+    limits:
+      cpu: "1"
+      memory: 1Gi

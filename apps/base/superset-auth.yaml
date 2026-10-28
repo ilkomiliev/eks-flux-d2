@@ -1,0 +1,18 @@
+apiVersion: v1
+kind: Secret
+metadata:
+    name: superset-auth
+type: Opaque
+stringData:
+    secret-key: ENC[AES256_GCM,data:EmmfKMzL0OLUalf56Q0/XJwwrNR63F4kUz7lkTKE8JhODZoerBqTSg4nU2eZqMnOEfNQpE4mylo=,iv:E5+zaqhovicPEVGDTQmSXcRZmjviowB8Fmtg+40rcgY=,tag:obZixetzqXZ6CH2RWlBL4g==,type:str]
+    admin-password: ENC[AES256_GCM,data:7jQ80rDS32hHOIeTHLYMhswkIIR4CiXarq/9tsw8tO/C/RPPb14nQBziJDTuM0kO,iv:mccJJwTGFhs5dk4RpNXK4hZkdr3kAAWR2IUjzW25ftA=,tag:Y7nI6jTY6QrrzX0hGppsNA==,type:str]
+sops:
+    encrypted_regex: ^(secretKey|secret-key|password|admin-password)$
+    kms:
+        - arn: arn:aws:kms:us-east-1:264930181295:key/bae8b21c-f0c2-4fe5-b57d-f784da444050
+          aws_profile: ""
+          created_at: "2026-10-28T19:10:01Z"
+          enc: AQICAHgq3ieCFt01TzCHGbsNjMPvwgEsK6qBAkgKsPzNswc5LgEeKZZw1n8tDKpKFFMnx9GPAAAAfjB8BgkqhkiG9w0BBwagbzBtAgEAMGgGCSqGSIb3DQEHATAeBglghkgBZQMEAS4wEQQMqriLcvgaW0snUR67AgEQgDtnAItKijurb5S5ENsE/l34ll7awbmni4N1I+3dSA8FmSgMOwuXLdPgE+ycq6oVsXjVjjbF9xcEAM7nmg==
+    lastmodified: "2026-10-28T19:29:47Z"
+    mac: ENC[AES256_GCM,data:B4EGM4AhAY/KW7doJtoEdd2+ZrU42Vr47bYu5fouKfrPz+wbyyQU7A9OxestSqMH3JFEutdSZBz0prp4zHte3kcuAouD3RMPaFkubeJ8/e9BQ5GZ1k3cjSlcgOeE8uKYoP9KT6CutuaX4usrmoVMZGaYBWOQvsvQmOWQq28gNdg=,iv:M96zGz6h9wLp3B7exRd+ah6hupUXnYL3ew0O5ihSXQA=,tag:h9HR968YYLrf52j1mmrIFA==,type:str]
+    version: 3.13.3

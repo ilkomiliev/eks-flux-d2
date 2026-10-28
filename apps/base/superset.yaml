@@ -1,0 +1,96 @@
+apiVersion: superset.apache.org/v1alpha1
+kind: Superset
+metadata:
+    name: superset
+spec:
+    image:
+        repository: 264930181295.dkr.ecr.us-east-1.amazonaws.com/first-tofu-superset
+        tag: 6.1.0
+        pullPolicy: Always
+    environment: Development
+    secretKeyFrom:
+        name: superset-auth
+        key: secret-key
+    metastore:
+        type: PostgreSQL
+        host: superset-db
+        database: superset
+        username: superset
+        passwordFrom:
+            name: superset.superset-db.credentials.postgresql.acid.zalan.do
+            key: password
+    valkey:
+        host: valkey-superset-cache
+        cache:
+            database: 0
+            keyPrefix: superset_cache_
+        dataCache:
+            database: 0
+            keyPrefix: superset_data_
+        filterStateCache:
+            database: 0
+            keyPrefix: superset_filter_
+        exploreFormDataCache:
+            database: 0
+            keyPrefix: superset_explore_
+        thumbnailCache:
+            database: 0
+            keyPrefix: superset_thumbnail_
+        distributedCoordination:
+            database: 0
+            keyPrefix: superset_coordination_
+        celeryBroker:
+            database: 0
+        celeryResultBackend:
+            database: 0
+        resultsBackend:
+            database: 0
+            keyPrefix: superset_results_
+    config: |
+        # Keep Cachelib multi-key commands within the single Valkey hash slot.
+        CACHE_CONFIG["CACHE_KEY_PREFIX"] = "{superset}_cache_"
+        DATA_CACHE_CONFIG["CACHE_KEY_PREFIX"] = "{superset}_data_"
+        FILTER_STATE_CACHE_CONFIG["CACHE_KEY_PREFIX"] = "{superset}_filter_"
+        EXPLORE_FORM_DATA_CACHE_CONFIG["CACHE_KEY_PREFIX"] = "{superset}_explore_"
+        THUMBNAIL_CACHE_CONFIG["CACHE_KEY_PREFIX"] = "{superset}_thumbnail_"
+        DISTRIBUTED_COORDINATION_CONFIG["CACHE_KEY_PREFIX"] = "{superset}_coordination_"
+        RESULTS_BACKEND.key_prefix = "{superset}_results_"
+        CeleryConfig.broker_transport_options = {"global_keyprefix": "{superset}_celery_"}
+        CeleryConfig.result_backend_transport_options = {"global_keyprefix": "{superset}_celery_results_"}
+    webServer:
+        replicas: 1
+        service:
+            type: ClusterIP
+    lifecycle:
+        init:
+            command:
+                - /bin/sh
+                - -c
+                - superset init && superset fab create-admin --username admin --firstname Superset --lastname Admin --email admin@example.com --password "$SUPERSET_ADMIN_PASSWORD" || true
+            podTemplate:
+                container:
+                    env:
+                        - name: SUPERSET_ADMIN_PASSWORD
+                          valueFrom:
+                            secretKeyRef:
+                                name: superset-auth
+                                key: admin-password
+    podTemplate:
+        container:
+            resources:
+                requests:
+                    cpu: 300m
+                    memory: 1Gi
+                limits:
+                    cpu: "1"
+                    memory: 2Gi
+sops:
+    encrypted_regex: ^(secretKey|secret-key|password|admin-password)$
+    kms:
+        - arn: arn:aws:kms:us-east-1:264930181295:key/bae8b21c-f0c2-4fe5-b57d-f784da444050
+          aws_profile: ""
+          created_at: "2026-10-28T19:10:00Z"
+          enc: AQICAHgq3ieCFt01TzCHGbsNjMPvwgEsK6qBAkgKsPzNswc5LgHU6iRW5/YJ7j3wQGcE1/TGAAAAfjB8BgkqhkiG9w0BBwagbzBtAgEAMGgGCSqGSIb3DQEHATAeBglghkgBZQMEAS4wEQQMUJ+yK2rr2/4EsH0CAgEQgDtYqzbzEpV6qqZ8q7+r34OvZHHyToEhdk+j0DJo13/6AnuUtI0k+5g1jqEiFq+pdkr0cbfG4Y6IHmr0og==
+    lastmodified: "2026-10-28T19:30:11Z"
+    mac: ENC[AES256_GCM,data:AHYxQDQLTYpWxIxfw41WYlotPkQ3dnKr1DqjcMIyVYEWmF3egXawqRyOAhLedfupmFAeuloXXiZSyBvx21H15mpP+QmvBqbMnX8gwteknCWfZGz9PkYreOj+9C/HXoKBRKBFjCAvLqy2xVQhB9VYGT3wAnmunDeb5ZO3L8HVx30=,iv:U2eEXtd8yUtVQ32PYfmLbEzvkwWsjlrJIGKUR70+01U=,tag:lhPM7cfMazVbfAmlzgH6JA==,type:str]
+    version: 3.13.3

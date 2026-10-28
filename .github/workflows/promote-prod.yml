@@ -1,0 +1,58 @@
+name: Promote verified release to prod
+
+on:
+  workflow_dispatch:
+    inputs:
+      image_tag:
+        description: Immutable Superset release tag to promote (for example v1.2.3)
+        required: true
+        type: string
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  promote:
+    runs-on: ubuntu-latest
+    environment: prod
+    steps:
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::264930181295:role/first-tofu-eks-github-actions-ecr
+          aws-region: us-east-1
+      - uses: aws-actions/amazon-ecr-login@v2
+      - name: Install Cosign
+        run: |
+          curl -fsSLo /tmp/cosign https://github.com/sigstore/cosign/releases/download/v2.4.3/cosign-linux-amd64
+          sudo install /tmp/cosign /usr/local/bin/cosign
+      - name: Promote the verified OCI artifacts and Superset image
+        env:
+          IMAGE_TAG: ${{ inputs.image_tag }}
+          REGISTRY: 264930181295.dkr.ecr.us-east-1.amazonaws.com
+        run: |
+          set -euo pipefail
+          [[ "$IMAGE_TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]
+          identity="^https://github\\.com/ilkomiliev/eks-flux-d2/\\.github/workflows/publish-artifacts\\.yml@refs/tags/${IMAGE_TAG}$"
+          for repository in first-tofu-superset first-tofu-flux-apps; do
+            cosign verify \
+              --certificate-identity-regexp "$identity" \
+              --certificate-oidc-issuer https://token.actions.githubusercontent.com \
+              "${REGISTRY}/${repository}:${IMAGE_TAG}" >/dev/null
+          done
+          promote_tag() {
+            local repository="$1"
+            local manifest
+            manifest="$(aws ecr batch-get-image \
+              --repository-name "$repository" \
+              --image-ids imageTag:"$IMAGE_TAG" \
+              --query 'images[0].imageManifest' \
+              --output text)"
+            test -n "$manifest"
+            aws ecr put-image \
+              --repository-name "$repository" \
+              --image-tag prod \
+              --image-manifest "$manifest" >/dev/null
+          }
+          promote_tag first-tofu-superset
+          promote_tag first-tofu-flux-apps

@@ -1,0 +1,16 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: prod
+resources:
+  - ../../base
+patches:
+  - path: image-tag-patch.yaml
+  - target:
+      group: superset.apache.org
+      version: v1alpha1
+      kind: Superset
+      name: superset
+    patch: |
+      - op: replace
+        path: /spec/environment
+        value: Production

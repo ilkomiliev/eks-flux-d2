@@ -1,0 +1,37 @@
+apiVersion: fluxcd.controlplane.io/v1
+kind: FluxInstance
+metadata:
+  name: flux
+  namespace: flux-system
+spec:
+  distribution:
+    version: "2.9.6"
+    registry: ghcr.io/fluxcd
+  components:
+    - source-controller
+    - kustomize-controller
+    - notification-controller
+  cluster:
+    type: aws
+    size: small
+    multitenant: false
+    networkPolicy: true
+    domain: cluster.local
+  kustomize:
+    patches:
+      - target:
+          kind: ServiceAccount
+          name: source-controller
+        patch: |
+          - op: add
+            path: /metadata/annotations
+            value:
+              eks.amazonaws.com/role-arn: arn:aws:iam::264930181295:role/first-tofu-eks-flux-source-controller
+      - target:
+          kind: ServiceAccount
+          name: kustomize-controller
+        patch: |
+          - op: add
+            path: /metadata/annotations
+            value:
+              eks.amazonaws.com/role-arn: arn:aws:iam::264930181295:role/first-tofu-eks-flux-kustomize-controller

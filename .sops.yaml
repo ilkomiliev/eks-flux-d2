@@ -1,0 +1,4 @@
+creation_rules:
+  - path_regex: apps/base/(superset|superset-auth)\.yaml$
+    encrypted_regex: '^(secretKey|secret-key|password|admin-password)$'
+    kms: arn:aws:kms:us-east-1:264930181295:key/bae8b21c-f0c2-4fe5-b57d-f784da444050

@@ -1,0 +1,33 @@
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: OCIRepository
+metadata:
+  name: apps-dev
+  namespace: flux-system
+spec:
+  interval: 1m
+  url: oci://264930181295.dkr.ecr.us-east-1.amazonaws.com/first-tofu-flux-apps
+  provider: aws
+  ref:
+    tag: dev
+  verify:
+    provider: cosign
+    matchOIDCIdentity:
+      - issuer: ^https://token.actions.githubusercontent.com$
+        subject: '^https://github\.com/ilkomiliev/eks-flux-d2/.github/workflows/publish-artifacts.yml@refs/(heads/main|tags/v[0-9]+\.[0-9]+\.[0-9]+)$'
+---
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: OCIRepository
+metadata:
+  name: apps-prod
+  namespace: flux-system
+spec:
+  interval: 1m
+  url: oci://264930181295.dkr.ecr.us-east-1.amazonaws.com/first-tofu-flux-apps
+  provider: aws
+  ref:
+    tag: prod
+  verify:
+    provider: cosign
+    matchOIDCIdentity:
+      - issuer: ^https://token.actions.githubusercontent.com$
+        subject: '^https://github\.com/ilkomiliev/eks-flux-d2/.github/workflows/publish-artifacts.yml@refs/tags/v[0-9]+\.[0-9]+\.[0-9]+$'

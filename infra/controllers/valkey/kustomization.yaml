@@ -1,0 +1,8 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - https://github.com/valkey-io/valkey-operator//config/default?ref=v0.8.0
+images:
+  - name: valkey/valkey-operator
+    newName: ghcr.io/valkey-io/valkey-operator
+    newTag: v0.8.0
