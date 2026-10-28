@@ -6,6 +6,7 @@ spec:
   networking:
     ingress:
       className: alb
+      host: '*.us-east-1.elb.amazonaws.com'
       annotations:
         alb.ingress.kubernetes.io/scheme: internet-facing
         alb.ingress.kubernetes.io/target-type: ip
