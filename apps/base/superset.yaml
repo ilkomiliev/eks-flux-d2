@@ -67,14 +67,14 @@ spec:
                 - /bin/sh
                 - -c
                 - superset init && superset fab create-admin --username admin --firstname Superset --lastname Admin --email admin@example.com --password "$SUPERSET_ADMIN_PASSWORD" || true
-            podTemplate:
-                container:
-                    env:
-                        - name: SUPERSET_ADMIN_PASSWORD
-                          valueFrom:
-                            secretKeyRef:
-                                name: superset-auth
-                                key: admin-password
+        podTemplate:
+            container:
+                env:
+                    - name: SUPERSET_ADMIN_PASSWORD
+                      valueFrom:
+                        secretKeyRef:
+                            name: superset-auth
+                            key: admin-password
     podTemplate:
         container:
             resources:
@@ -91,6 +91,6 @@ sops:
           aws_profile: ""
           created_at: "2026-10-28T19:10:00Z"
           enc: AQICAHgq3ieCFt01TzCHGbsNjMPvwgEsK6qBAkgKsPzNswc5LgHU6iRW5/YJ7j3wQGcE1/TGAAAAfjB8BgkqhkiG9w0BBwagbzBtAgEAMGgGCSqGSIb3DQEHATAeBglghkgBZQMEAS4wEQQMUJ+yK2rr2/4EsH0CAgEQgDtYqzbzEpV6qqZ8q7+r34OvZHHyToEhdk+j0DJo13/6AnuUtI0k+5g1jqEiFq+pdkr0cbfG4Y6IHmr0og==
-    lastmodified: "2026-10-28T19:30:11Z"
-    mac: ENC[AES256_GCM,data:AHYxQDQLTYpWxIxfw41WYlotPkQ3dnKr1DqjcMIyVYEWmF3egXawqRyOAhLedfupmFAeuloXXiZSyBvx21H15mpP+QmvBqbMnX8gwteknCWfZGz9PkYreOj+9C/HXoKBRKBFjCAvLqy2xVQhB9VYGT3wAnmunDeb5ZO3L8HVx30=,iv:U2eEXtd8yUtVQ32PYfmLbEzvkwWsjlrJIGKUR70+01U=,tag:lhPM7cfMazVbfAmlzgH6JA==,type:str]
+    lastmodified: "2026-10-28T20:45:49Z"
+    mac: ENC[AES256_GCM,data:D6CKxkdqtLGPqKhp1/ndIr5WfdtkhTNj4frGo3FtaNSDk+0uXTfq6sgaDxqwW91V7By0EiBVs9Jt6AnmHD6csg6Xjc6NjqjfTkL7LFt7oErlE1+DeD9dDloKoaan7WSJSlGcL1kDc9Cpap3y05b+mW7ncRPuBvmM6yWPauzk+I8=,iv:ULLRXLDYVS9rz2PzxWPB28yr0E5eGnroX4Kz/GjOl1Y=,tag:DOxlW2RphLwY9mT5J+On4w==,type:str]
     version: 3.13.3
