@@ -1,6 +1,8 @@
 locals {
-  github_owner      = "ilkomiliev"
-  github_repository = "eks-flux-d2"
+  github_owner         = "ilkomiliev"
+  github_owner_id      = "13727967"
+  github_repository    = "eks-flux-d2"
+  github_repository_id = "1437435542"
   ecr_repository_names = toset([
     "first-tofu-flux-fleet",
     "first-tofu-flux-infra",
@@ -55,9 +57,9 @@ resource "aws_iam_role" "github_actions" {
         }
         StringLike = {
           "token.actions.githubusercontent.com:sub" = [
-            "repo:${local.github_owner}/${local.github_repository}:ref:refs/heads/main",
-            "repo:${local.github_owner}/${local.github_repository}:ref:refs/tags/v*",
-            "repo:${local.github_owner}/${local.github_repository}:environment:prod",
+            "repo:${local.github_owner}@${local.github_owner_id}/${local.github_repository}@${local.github_repository_id}:ref:refs/heads/main",
+            "repo:${local.github_owner}@${local.github_owner_id}/${local.github_repository}@${local.github_repository_id}:ref:refs/tags/v*",
+            "repo:${local.github_owner}@${local.github_owner_id}/${local.github_repository}@${local.github_repository_id}:environment:prod",
           ]
         }
       }
